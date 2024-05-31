@@ -1,0 +1,40 @@
+name: Create Build Branch
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  create-build-branch:
+    name: Create Build Branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Web environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install packages
+        run: yarn install --frozen-lockfile
+
+      - name: Build the plugin
+        run: yarn build
+
+      - name: Commit and push build to build branch
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git fetch origin
+          git checkout -B build
+          git add -f .
+          git commit -m "Build artifacts"
+          git push -u origin build --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
